@@ -1,0 +1,12 @@
+!!! 5
+html(lang="ru")
+	head
+		script(src="js/knockout-2.2.0.js")
+		block title
+			title Object manager
+	body
+		h1 Hello #{name}
+		block content
+			ul.b-items
+			- for (var key in items)
+				li.b-items__item= list[key].title

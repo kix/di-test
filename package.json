@@ -1,0 +1,10 @@
+{
+    "name": "objmanager"
+  , "version": "0.0.1"
+  , "description": "A simple JS object manager"
+  , "dependencies": {
+      "mongorito": "0.3.6"
+    , "express":   "2.5.11"
+    , "jade": 	   "0.27.7"
+  }
+}

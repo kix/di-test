@@ -1,0 +1,36 @@
+extends(filename="layout.jade")
+
+script(src="/js/jquery.min.js")
+script(src="/js/knockout-2.2.0.js")
+script(src="/js/main.js")
+
+block title
+    ='Hello world'
+
+block content
+    script#item-template(type="text/html")
+        li.b-items__item(data-bind="text: name")
+            span.b-items_item__price(data-bind="text: price")
+            span.b-items_item__quantity(data-bind="text: quantity")
+
+    h1 Items (total: 
+       span.total(data-bind="text: documents.count") 0
+       )
+    ul.b-items(data-bind="template: {name: 'item-template', foreach: documents}")
+    #- for (var item in items)
+    #    li.b-items__item= items[item].name
+
+block form
+    h1 Add a new document
+    form(action="/documents", method="POST")
+        div.clearfix
+            label(for="name") Name
+            input#name(type="text", name="name")
+        div.clearfix
+            label(for="price") Price
+            input#price(type="text", name="price")
+        div.clearfix
+            label(for="quantity") Quantity
+            input#quantity(type="text", name="quantity")
+        div.clearfix
+            input(type="submit")
