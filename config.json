@@ -1,0 +1,4 @@
+{
+	"mongoUri":   "mongo://127.0.0.1:27017/om",
+	"listenPort": 3000
+}

@@ -1,12 +1,16 @@
 !!! 5
 html(lang="ru")
 	head
-		script(src="js/knockout-2.2.0.js")
+		block head_style
+			link(rel="stylesheet", href="/css/bootstrap.min.css")
+		block head_script
+			script(src="js/knockout-2.2.0.js")
+			script(src="/js/jquery.min.js")
+			script(src="/js/knockout-2.2.0.js")
+			script(src="/js/main.js")
 		block title
 			title Object manager
 	body
-		h1 Hello #{name}
-		block content
-			ul.b-items
-			- for (var key in items)
-				li.b-items__item= list[key].title
+		.container
+			block content
+				| Content here

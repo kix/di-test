@@ -5,44 +5,21 @@ var fs = require('fs');
 
 var models = require('./models');
 
-mongorito.connect(['mongo://127.0.0.1:27017/om']);
-
-/*
-for (var i = 60 - 1; i >= 0; i--) {
-	var doc = new models.Document();
-	doc.name = 'Name';
-	doc.price = 1.49;
-	doc.quantity = 3;
-
-	doc.save(function(err){
-	    console.log(err);
-	});
+var config = {
+	"mongoUri":   "mongo://127.0.0.1:27017/om",
+	"listenPort": 3000	
 };
-*/
-/*
-var doc = new models.Document();
-doc.name = 'Name';
-doc.price = 'beaver';
-doc.quantity = 3;
 
-doc.save(function(err){
-    console.log(err);
-});
+/**
+ * Load config.json file if exists
+ */
 
+if (fs.existsSync(__dirname + '/config.json')) {
+	console.log('Using config file');
+	config = JSON.parse(fs.readFileSync(__dirname + '/config.json'));
+}
 
-var doc = new models.Document();
-doc.name = 'Name';
-doc.price = 1.49;
-doc.quantity = 3.3;
-
-doc.save(function(err, values){
-	console.log(values);
-    console.log(err);
-});
-
-models.Document.find({}, function(err, docs) {
-	console.log(docs);
-});*/
+mongorito.connect([config.mongoUri]);
 
 var app = express.createServer();
 app.set('view engine', 'jade');
@@ -59,10 +36,14 @@ app.get('/', function(req, res) {
 
 	models.Document.find({limit: 20}, function(err, docs) {
 		if (docs) {
-			res.render('index.jade', {"items": docs})
+			res.render('index.jade', {"items": docs, "count": docs.length})
 		}	
 	})
 });
+
+/**
+ * The following is just a common RESTful implementation
+ */
 
 app.get('/documents', function(req, res){
 	var page = (req.param('page') || 1) - 1;
@@ -72,7 +53,7 @@ app.get('/documents', function(req, res){
 		skip: page * 20
 	}, function(err, docs) {
 		console.log(docs.length);
-		res.write(JSON.stringify(docs));
+		res.json(docs);
 		res.end();
 	})
 });
@@ -84,8 +65,7 @@ app.get('/documents/:id', function(req, res) {
 	}, function(err, doc) {
 		if (doc) {
 			console.log(doc);
-			res.write(JSON.stringify(doc));
-			res.end();
+			res.json(doc);
 		} else {
 			console.log('error');
 		}
@@ -94,18 +74,48 @@ app.get('/documents/:id', function(req, res) {
 });
 
 app.put('/documents/:id', function(req, res) {
-
+	models.Document.find({
+		'_id': req.param('id')
+	}, function(err, doc) {
+		if (doc) {
+			doc.updateAttributes(req.body);
+			doc.save();
+			res.json(doc);
+		} else {
+			console.log('error');
+		}
+	});
 });
+
+app.delete('/documents/:id', function(req, res) {
+	models.Document.find({
+		'_id': req.param('id')
+	}, function(err, doc) {
+		console.log('removing ' + req.param('id'));
+		if (!doc) {
+			res.status(404);
+			res.json({success: false});
+		} else {
+			doc.remove(function(err){});
+			res.json({success: true});
+			res.end();
+		}
+	})
+})
 
 app.post('/documents', function(req, res){
 	var doc = new models.Document();
-	console.log(req.body);
 	doc.updateAttributes(req.body);
+
 	doc.save(function(err, attrs) {
-		console.log(err, attrs);
-		// console.log(doc)
+		console.log(attrs);
 	});
-	res.end();
+	if (req.xhr) {
+		res.json(doc);
+	} else {
+		res.redirect('/');		
+	}
 });
 
-app.listen(3000);
+app.listen(config.listenPort);
+console.log('App listening on port '+ config.listenPort)

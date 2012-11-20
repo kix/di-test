@@ -1,36 +1,62 @@
-extends(filename="layout.jade")
-
+link(rel="stylesheet", href="/css/bootstrap.min.css")
 script(src="/js/jquery.min.js")
 script(src="/js/knockout-2.2.0.js")
 script(src="/js/main.js")
+script(src="/js/bootstrap.min.js")
 
-block title
-    ='Hello world'
 
 block content
-    script#item-template(type="text/html")
-        li.b-items__item(data-bind="text: name")
-            span.b-items_item__price(data-bind="text: price")
-            span.b-items_item__quantity(data-bind="text: quantity")
+    .container
+        script#item-template(type="text/html")
+            li.b-items__item(data-bind="text: name")
+                span.b-items_item__price(data-bind="text: price")
+                span.b-items_item__quantity(data-bind="text: quantity")
+                a.b-items_item__remove(href="#", data-bind="click: $root.deleteItem")
 
-    h1 Items (total: 
-       span.total(data-bind="text: documents.count") 0
-       )
-    ul.b-items(data-bind="template: {name: 'item-template', foreach: documents}")
-    #- for (var item in items)
-    #    li.b-items__item= items[item].name
-
-block form
-    h1 Add a new document
-    form(action="/documents", method="POST")
-        div.clearfix
-            label(for="name") Name
-            input#name(type="text", name="name")
-        div.clearfix
-            label(for="price") Price
-            input#price(type="text", name="price")
-        div.clearfix
-            label(for="quantity") Quantity
-            input#quantity(type="text", name="quantity")
-        div.clearfix
-            input(type="submit")
+        h3 Items (total: 
+            span.total(data-bind="text: items.count")
+            = count
+            )
+            a(href="#editForm", class="btn", data-toggle="modal")
+                .icon-plus
+        table.table.b-items
+            thead
+                th Name
+                th Price
+                th Quantity
+                th Sum
+                th Actions
+                for item in items
+                    tr(data-document-id=item._id)
+                        td.b-items_item__name #{item.name}
+                        td.b-items_item__price #{item.price} $
+                        td.b-items_item__quantity #{item.quantity}
+                        td.b-items_item__sum #{item.price * item.quantity} $
+                        td.b-items_item__actions
+                            a(href="/documents/#{item._id}", class="delete")
+                                i.icon-trash
+                            a(href="/documents/#{item._id}", class="edit")
+                                i.icon-pencil
+        .modal.hide.fade#editForm
+            form.modal-form.b-form(action="/documents", method="POST", data-bind="")
+                .modal-header 
+                    button(class="close", data-dismiss="modal")
+                    h3 Add a document
+                .modal-body
+                    fieldset
+                        input.b-form_id__hidden(type="hidden", name="id")
+                        .control-group
+                            label.control-label.b-form_name__label(for="name") Name
+                            .controls
+                                input.b-form_name__input(type="text", name="name", placeholder="Type something…")
+                        .control-group
+                            label.control-label.b-form_price__label(for="price") Price
+                            .controls
+                                input.b-form_price__input#price(type="text", name="price")
+                        .control-group
+                            label.control-label.b-form_quantity__label(for="quantity") Quantity
+                            .controls
+                                input.b-form_quantity__input(type="text", name="quantity")
+            .modal-footer
+                    a.btn.b-form__close Close
+                    a.btn.btn-primary.b-form__submit(type="submit") Save
