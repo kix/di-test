@@ -13,10 +13,7 @@ block content
                 span.b-items_item__quantity(data-bind="text: quantity")
                 a.b-items_item__remove(href="#", data-bind="click: $root.deleteItem")
 
-        h3 Items (total: 
-            span.total(data-bind="text: items.count")
-            = count
-            )
+        h3 Items 
             a(href="#editForm", class="btn", data-toggle="modal")
                 .icon-plus
         table.table.b-items
@@ -26,37 +23,51 @@ block content
                 th Quantity
                 th Sum
                 th Actions
-                for item in items
-                    tr(data-document-id=item._id)
-                        td.b-items_item__name #{item.name}
-                        td.b-items_item__price #{item.price} $
-                        td.b-items_item__quantity #{item.quantity}
-                        td.b-items_item__sum #{item.price * item.quantity} $
+            tbody(data-bind="{foreach: items}")
+                tr(data-bind="{data-document-id: _id}")
+                    td.b-items_item__name(data-bind="text: name")
+                    td.b-items_item__price(data-bind="text: price")
+                    td.b-items_item__quantity(data-bind="text: quantity")
+                    td.b-items_item__sum(data-bind="text: (price * quantity).toFixed(2)")
                         td.b-items_item__actions
-                            a(href="/documents/#{item._id}", class="delete")
+                            a(class="delete", data-bind="click: $root.removeDocument")
                                 i.icon-trash
-                            a(href="/documents/#{item._id}", class="edit")
+                            a(class="edit", data-bind="click: $root.editDocument")
                                 i.icon-pencil
+            tr
+                td(colspan=2)
+                td
+                    span(data-bind="text: totalItems")
+                    |  items
+                td
+                    | $
+                    span(data-bind="text: totalSum")
+
+
+
         .modal.hide.fade#editForm
-            form.modal-form.b-form(action="/documents", method="POST", data-bind="")
+            form.modal-form.b-form(action="/documents", method="POST", data-bind="{with: formItem, submit: updateDocument}")
                 .modal-header 
                     button(class="close", data-dismiss="modal")
                     h3 Add a document
                 .modal-body
                     fieldset
                         input.b-form_id__hidden(type="hidden", name="id")
-                        .control-group
+                        .control-group.b-form_group__name
                             label.control-label.b-form_name__label(for="name") Name
                             .controls
-                                input.b-form_name__input(type="text", name="name", placeholder="Type something…")
-                        .control-group
+                                input.b-form_name__input(type="text", name="name", placeholder="Type something…", data-bind="text: name")
+                                span.help-inline Should not be empty
+                        .control-group.b-form_group__price
                             label.control-label.b-form_price__label(for="price") Price
                             .controls
-                                input.b-form_price__input#price(type="text", name="price")
-                        .control-group
+                                input.b-form_price__input#price(type="text", name="price", placeholder="49.95")
+                                span.help-inline Should be a positive float
+                        .control-group.b-form_group__quantity
                             label.control-label.b-form_quantity__label(for="quantity") Quantity
                             .controls
-                                input.b-form_quantity__input(type="text", name="quantity")
+                                input.b-form_quantity__input(type="text", name="quantity", placeholder="1.3")
+                                span.help-inline Should be a positive float
             .modal-footer
                     a.btn.b-form__close Close
-                    a.btn.btn-primary.b-form__submit(type="submit") Save
+                    a.btn.btn-primary.b-form__submit(type="submit", data-bind="click: updateDocument") Save

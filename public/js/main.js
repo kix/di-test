@@ -1,14 +1,104 @@
+var showErrors = function(errors) {
+	$('.error').removeClass('error');
 
-var ViewModel = function(items) {
-	this.items = ko.observableArray(items);
+	if (errors.indexOf('quantity') != -1) {
+		$('.b-form_group__quantity').addClass('error')
+	}
+	if (errors.indexOf('price') != -1) {		
+		$('.b-form_group__price').addClass('error')
+	}
+	if (errors.indexOf('name') != -1) {
+		console.log('name err');
+		$('.b-form_group__name').addClass('error')
+	}
 }
 
-$(function(){
-	
-	$.getJSON('/documents', function(data) {
-		console.log(data);
+var Item = function(name, price, quantity) {
+	this.name = ko.observable(name);
+	this.price = ko.observable(price);
+	this.quantity = ko.observable(quantity);
+}
 
-		ko.applyBindings(new ViewModel(data));
+var ViewModel = function(items) {
+	self = this;
+	self.items = ko.observableArray(items);
+	self.totalItems = ko.computed(function(){
+		result = 0;
+		for (item in items) {
+			result += parseInt(items[item].quantity);
+		}
+		return result;
+	});
+	self.totalSum = ko.computed(function(){
+		result = 0;
+		for (item in items) {
+			result += items[item].price * items[item].quantity;
+		}
+		return result;
+	});
+	self.formItem = ko.observable({
+		id: '',
+		name: 'Name',
+		price: '',
+		quantity: ''
+	});
+	self.removeDocument = function(document) {
+		$.ajax({
+			url: '/documents/'+document._id,
+			type: 'DELETE',
+			success: function(data) {
+				console.log('deleted ' + document._id);
+				self.items.remove(document);
+				console.log(self.items());
+				console.log(self.totalItems());
+				ko.applyBindings(new ViewModel(docs));
+			},
+			error: function(data) {
+				console.log(data);
+			}
+		})
+	}
+	self.editDocument = function(document) {
+		console.log(self);
+		self.formItem = document;
+		$('#editForm').modal('show');
+		console.log('edit');
+	}
+	self.updateDocument = function(document) {
+		var isUpdate = $('.b-form_id__hidden').val();
+
+		$.ajax({
+			data: $('.b-form').serialize(),
+			dataType: 'json',
+			type: (isUpdate) ? "PUT" : "POST",
+			url: (isUpdate) ? '/documents/' + $('.b-form_id__hidden').val() : '/documents/',
+			success: function(data) {
+				console.log('success', data);
+				$('#editForm').modal('hide');
+				self.items.push(data);
+				ko.applyBindings(new ViewModel(docs));
+			},
+			error: function(jqXHR) {
+				showErrors(JSON.parse(jqXHR.responseText).errors);
+			}
+		});
+	}
+}
+
+var docs = [];
+
+// ko.applyBindings(new ViewModel());
+
+$(function(){
+
+	$.getJSON('/documents', function(data) {
+		var data;
+		console.log(data);
+		$(data).each(function(i){
+			console.log(data[i]);
+			docs.push(data[i]);
+		})
+		ko.applyBindings(new ViewModel(docs));
 	});
 
 	$('.b-items_item__actions a.edit').click(function(e) {
@@ -48,29 +138,11 @@ $(function(){
 			}
 		})
 	})
+
+
 	$('.b-form__submit').click(function(e){
 		e.preventDefault();
-		req = {
-			data: $('.b-form').serialize(),
-			success: function(data) {
-				console.log(data);
-				$('#editForm').modal('hide');
-			},
-			error: function(data) {
-				console.log(data);
-			}
-		}
 
-		$('.modal-header > h3').html('Add a document');
-
-		if ($('.b-form_id__hidden').val()) {
-			req.type = "PUT";
-			req.url  = '/documents/' + $('.b-form_id__hidden').val();
-		} else {
-			req.type = "POST";
-			req.url  = '/documents';
-		}
-		console.log(req)
-		$.ajax(req);
+		
 	})
 });

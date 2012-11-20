@@ -67,7 +67,8 @@ app.get('/documents/:id', function(req, res) {
 			console.log(doc);
 			res.json(doc);
 		} else {
-			console.log('error');
+			res.status(404);
+			res.json({success: false});
 		}
 	});
 	
@@ -79,10 +80,18 @@ app.put('/documents/:id', function(req, res) {
 	}, function(err, doc) {
 		if (doc) {
 			doc.updateAttributes(req.body);
-			doc.save();
-			res.json(doc);
+			result = doc.save(function(err, attrs) {
+				if (result instanceof Array) {
+					console.log('failed:', result)
+					res.status(400);
+					res.json({success: false, errors: result});
+				} else {
+					res.json(doc);	
+				}
+			});
 		} else {
-			console.log('error');
+			res.status(404);
+			res.json({success: false});
 		}
 	});
 });
@@ -98,7 +107,6 @@ app.delete('/documents/:id', function(req, res) {
 		} else {
 			doc.remove(function(err){});
 			res.json({success: true});
-			res.end();
 		}
 	})
 })
@@ -108,13 +116,14 @@ app.post('/documents', function(req, res){
 	doc.updateAttributes(req.body);
 
 	doc.save(function(err, attrs) {
-		console.log(attrs);
+		if (attrs instanceof Array) {
+			res.status(400);
+			res.json({success: false, errors: attrs});
+			res.end();
+		} else {
+			res.json(doc);		
+		}
 	});
-	if (req.xhr) {
-		res.json(doc);
-	} else {
-		res.redirect('/');		
-	}
 });
 
 app.listen(config.listenPort);

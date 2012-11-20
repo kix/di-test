@@ -8,16 +8,27 @@ var Document = (function(){
 
     Document.prototype.keys = ['name', 'quantity', 'price'];
 
-  //   Document.prototype.validateQuantity = function(callback) {
-		// return callback(
-		// 	typeof parseInt(this.quantity) === 'number' 
-	 //        && parseInt(this.quantity) % 1 == 0
-		// );
-  //   };
+    Document.prototype.validateName = function(callback) {
+      return callback(
+        typeof this.name === 'string'
+            && this.name.length > 0
+      );
+    }
 
-  //   Document.prototype.validatePrice = function(callback) {
-  //   	return callback(typeof parseFloat(this.price) === 'number');
-  //   }
+    Document.prototype.validateQuantity = function(callback) {
+  		return callback(
+  			typeof parseInt(this.quantity) === 'number' 
+  	        && parseInt(this.quantity) % 1 == 0
+            && this.quantity > 0
+  		);
+    };
+
+    Document.prototype.validatePrice = function(callback) {
+    	return callback(
+        typeof parseFloat(this.price) === 'number'
+        && parseFloat(this.price) > 0
+        );
+    }
 
     return Document;
 
