@@ -2,6 +2,7 @@
     "name": "objmanager"
   , "version": "0.0.1"
   , "description": "A simple JS object manager"
+  , "scripts": {"start": "node main.js"}
   , "dependencies": {
       "mongorito": "0.3.6"
     , "express":   "2.5.11"
