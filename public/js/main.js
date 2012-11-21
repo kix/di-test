@@ -1,70 +1,93 @@
-var showErrors = function(errors) {
-	$('.error').removeClass('error');
+ko.bindingHandlers.documentId = {
+    init: function(element, valueAccessor) {
+        $(element).attr('data-document-id', valueAccessor());
+    },
+    update: function(element, valueAccessor) {
+        $(element).attr('data-document-id', valueAccessor());
+    }
+};
 
-	if (errors.indexOf('quantity') != -1) {
-		$('.b-form_group__quantity').addClass('error')
-	}
-	if (errors.indexOf('price') != -1) {		
-		$('.b-form_group__price').addClass('error')
-	}
-	if (errors.indexOf('name') != -1) {
-		console.log('name err');
-		$('.b-form_group__name').addClass('error')
-	}
+var showErrors = function(errors) {
+	
 }
 
-var Item = function(name, price, quantity) {
-	this.name = ko.observable(name);
-	this.price = ko.observable(price);
-	this.quantity = ko.observable(quantity);
+var Item = function(name, price, quantity, id) {
+	var self = this;
+
+	self._id = ko.observable(id);
+	self.name = ko.observable(name);
+	self.price = ko.observable(price);
+	self.quantity = ko.observable(quantity);
+
+	self.sum = ko.computed(function(){
+		return '$' + self.price() * self.quantity();
+	})
 }
 
 var ViewModel = function(items) {
-	self = this;
-	self.items = ko.observableArray(items);
+	
+	var self = this;
+	
+	self.items = ko.observableArray([]);
+
 	self.totalItems = ko.computed(function(){
 		result = 0;
-		for (item in items) {
-			result += parseInt(items[item].quantity);
-		}
+		self.items().map(function(item){
+			result += parseInt(item.quantity());
+		})
 		return result;
 	});
+
+	self.findItemById = function(id) {
+		var result;
+		/** TODO: should use for-loop */
+		self.items().map(function(item) {
+			if (item._id() == id) {
+				result = item;
+			}
+		});
+		return result;
+	};
+
 	self.totalSum = ko.computed(function(){
 		result = 0;
-		for (item in items) {
-			result += items[item].price * items[item].quantity;
-		}
+		self.items().map(function(item){
+			result += parseInt(item.quantity()) * parseInt(item.price());
+		})
 		return result;
 	});
-	self.formItem = ko.observable({
-		id: '',
-		name: 'Name',
-		price: '',
-		quantity: ''
-	});
+	
+	self.formItem = ko.observable(new Item());
+	
 	self.removeDocument = function(document) {
+		console.log(document);
 		$.ajax({
-			url: '/documents/'+document._id,
+			url: '/documents/'+document._id(),
 			type: 'DELETE',
 			success: function(data) {
-				console.log('deleted ' + document._id);
-				self.items.remove(document);
-				console.log(self.items());
-				console.log(self.totalItems());
-				ko.applyBindings(new ViewModel(docs));
+				self.items.destroy(document);
 			},
 			error: function(data) {
+				alert('Could not delete document '+document._id());
 				console.log(data);
 			}
 		})
-	}
+	}.bind(this);
+
 	self.editDocument = function(document) {
-		console.log(self);
-		self.formItem = document;
+		console.log(document.name());
+
+		/** TODO: this is a hack */
+		$('.b-form_id__hidden').val(document._id());
+		$('.b-form_name__input').val(document.name());
+		$('.b-form_price__input').val(document.price());
+		$('.b-form_quantity__input').val(document.quantity());
+
 		$('#editForm').modal('show');
 		console.log('edit');
 	}
-	self.updateDocument = function(document) {
+
+	self.updateDocument = function(viewModel) {
 		var isUpdate = $('.b-form_id__hidden').val();
 
 		$.ajax({
@@ -72,77 +95,79 @@ var ViewModel = function(items) {
 			dataType: 'json',
 			type: (isUpdate) ? "PUT" : "POST",
 			url: (isUpdate) ? '/documents/' + $('.b-form_id__hidden').val() : '/documents/',
-			success: function(data) {
-				console.log('success', data);
+			success: function(item) {
+				var newItem = new Item(item.name, item.price, item.quantity, item._id);
+				if (isUpdate) {
+					/** TODO: this is bad code, can be done better */
+					var item = self.findItemById(isUpdate);
+					item.name(newItem.name());
+					item.price(newItem.price());
+					item.quantity(newItem.quantity());
+					// item = newItem;
+				} else {
+					self.items.push(newItem);
+				}
+				self.formItem(new Item());
+
+				/** TODO: this is a hack */
+				$('.b-form_id__hidden')		.val('');
+				$('.b-form_name__input')	.val('');
+				$('.b-form_price__input')	.val('');
+				$('.b-form_quantity__input').val('');
+
 				$('#editForm').modal('hide');
-				self.items.push(data);
-				ko.applyBindings(new ViewModel(docs));
 			},
 			error: function(jqXHR) {
-				showErrors(JSON.parse(jqXHR.responseText).errors);
+				var errors = JSON.parse(jqXHR.responseText).errors;
+
+				$('.error').removeClass('error');
+				$('.modal-body .help-inline').hide();
+
+				for (k in errors) {
+					$('.b-form_group__'+errors[k]).addClass('error');
+					$('.b-form_group__'+errors[k] + ' .help-inline').show();
+				}
 			}
 		});
-	}
-}
-
-var docs = [];
-
-// ko.applyBindings(new ViewModel());
-
-$(function(){
+	}.bind(this);
 
 	$.getJSON('/documents', function(data) {
-		var data;
 		console.log(data);
-		$(data).each(function(i){
-			console.log(data[i]);
-			docs.push(data[i]);
-		})
-		ko.applyBindings(new ViewModel(docs));
-	});
+		var mappedItems = $.map(data, function(item) {
+                return new Item(item.name, item.price, item.quantity, item._id);
+            });
 
-	$('.b-items_item__actions a.edit').click(function(e) {
-		e.preventDefault();
-		var docId = $(this).parent().parent().attr('data-document-id');
-		$('.modal-header > h3').html('Editing document');
-		$.ajax({
-			type: "GET",
-			url: '/documents/'+docId,
-			success: function(data) {
-				console.log(data);
-				$('.b-form_id__hidden').val(data._id);
-				$('.b-form_name__input').val(data.name);
-				$('.b-form_price__input').val(data.price);
-				$('.b-form_quantity__input').val(data.quantity);
-			}
-		});
-		$('#editForm').modal('show');
+		console.log(mappedItems);
+		self.items(mappedItems);
+	});
+}
+
+var vm;
+
+$(function(){
+	// $('.modal-body .help-inline').hide();
+
+	vm = new ViewModel();
+	ko.applyBindings(vm);
+
+	vm.formItem.subscribe(function(newVal){
+		console.log(newVal);
 	})
+
+	$('.b-add-item__button').click(function(){
+		/** TODO: this is a hack */
+		$('.b-form_id__hidden')		.val('');
+		$('.b-form_name__input')	.val('');
+		$('.b-form_price__input')	.val('');
+		$('.b-form_quantity__input').val('');
+	});
 
 	$('.b-form__close').click(function(){
 		$('#editForm').modal('hide');
 	})
 
-	$('.b-items_item__actions a.delete').click(function(e){
-		var docId = $(this).parent().parent().attr('data-document-id');
-		console.log('delete')
-		e.preventDefault();
-		$.ajax({
-			url: '/documents/'+docId,
-			type: 'DELETE',
-			success: function(data) {
-
-			},
-			error: function(data) {
-				console.log(data);
-			}
-		})
-	})
-
 
 	$('.b-form__submit').click(function(e){
 		e.preventDefault();
-
-		
 	})
 });

@@ -7,14 +7,9 @@ script(src="/js/bootstrap.min.js")
 
 block content
     .container
-        script#item-template(type="text/html")
-            li.b-items__item(data-bind="text: name")
-                span.b-items_item__price(data-bind="text: price")
-                span.b-items_item__quantity(data-bind="text: quantity")
-                a.b-items_item__remove(href="#", data-bind="click: $root.deleteItem")
 
         h3 Items 
-            a(href="#editForm", class="btn", data-toggle="modal")
+            a.b-add-item__button(href="#editForm", class="btn", data-toggle="modal")
                 .icon-plus
         table.table.b-items
             thead
@@ -23,12 +18,12 @@ block content
                 th Quantity
                 th Sum
                 th Actions
-            tbody(data-bind="{foreach: items}")
-                tr(data-bind="{data-document-id: _id}")
+            tbody(data-bind="foreach: items")
+                tr(data-bind="{documentId: _id()}")
                     td.b-items_item__name(data-bind="text: name")
                     td.b-items_item__price(data-bind="text: price")
                     td.b-items_item__quantity(data-bind="text: quantity")
-                    td.b-items_item__sum(data-bind="text: (price * quantity).toFixed(2)")
+                    td.b-items_item__sum(data-bind="text: sum")
                         td.b-items_item__actions
                             a(class="delete", data-bind="click: $root.removeDocument")
                                 i.icon-trash
@@ -37,16 +32,16 @@ block content
             tr
                 td(colspan=2)
                 td
-                    span(data-bind="text: totalItems")
+                    span(data-bind="text: $root.totalItems()")
                     |  items
                 td
                     | $
-                    span(data-bind="text: totalSum")
+                    span(data-bind="text: $root.totalSum()")
 
 
 
         .modal.hide.fade#editForm
-            form.modal-form.b-form(action="/documents", method="POST", data-bind="{with: formItem, submit: updateDocument}")
+            form.modal-form.b-form(action="/documents", method="POST", data-bind="{submit: updateDocument}")
                 .modal-header 
                     button(class="close", data-dismiss="modal")
                     h3 Add a document
@@ -56,7 +51,7 @@ block content
                         .control-group.b-form_group__name
                             label.control-label.b-form_name__label(for="name") Name
                             .controls
-                                input.b-form_name__input(type="text", name="name", placeholder="Type something…", data-bind="text: name")
+                                input.b-form_name__input(type="text", name="name", placeholder="Type something…")
                                 span.help-inline Should not be empty
                         .control-group.b-form_group__price
                             label.control-label.b-form_price__label(for="price") Price
